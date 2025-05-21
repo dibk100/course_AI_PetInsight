@@ -9,6 +9,7 @@
 */wandb
 *.pth
 data/
+data_mini_cat/
 *.mp4
 pet_recogn/
 

@@ -20,12 +20,15 @@ data/
 ```
 cat_behavior_project/
 ├── data/               # 데이터셋
-├── dataset.py          # 데이터셋 클래스
-├── model.py            # 모델 정의
+├── dataset.py          # 데이터 로딩 및 전처리
+├── model.py            # 모델들 정리
 ├── train.py            # 학습 루프
 ├── eval.py             # 성능 평가
-├── utils.py            # 
-├── config.yaml         # 설정파일
-└── requirements.txt
+├── main.py             # 전체 파이프라인 실행 (학습 + 평가)
+│
+├── outputs/            # 모델 저장, 예측 결과 등 출력물 저장용
+│   ├── checkpoints/    # 학습된 모델 저장
+│   └── logs/           # 로그 파일 저장
+└── requirements.txt    # 추후에 작성하기
 ```
 
