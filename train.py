@@ -1,14 +1,21 @@
-import torch
-import torch.nn as nn
-import torch.optim as optim
-from model import get_model
-from project_cat_behavior.dataset import get_dataloaders
+from sklearn.metrics import f1_score
 
 def train(model, train_loader, criterion, optimizer, device):
     model.train()
-    total, correct, total_loss = 0, 0, 0
+    total_loss = 0
+    all_preds = []
+    all_labels = []
+    
+    for batch in train_loader:
+        inputs, labels = batch[0], batch[1]
+        print(len(inputs))
+        print(len(labels))
 
-    for inputs, labels in train_loader:
+        if isinstance(batch, tuple) and len(batch) == 2:
+            inputs, labels = batch
+        else:
+            raise ValueError("Unexpected batch structure from train_loader")
+
         inputs, labels = inputs.to(device), labels.to(device)
 
         optimizer.zero_grad()
@@ -19,9 +26,9 @@ def train(model, train_loader, criterion, optimizer, device):
 
         total_loss += loss.item()
         _, predicted = outputs.max(1)
-        total += labels.size(0)
-        correct += predicted.eq(labels).sum().item()
+        all_preds.extend(predicted.cpu().numpy())
+        all_labels.extend(labels.cpu().numpy())
     
-    acc = 100. * correct / total
     avg_loss = total_loss / len(train_loader)
-    return avg_loss, acc
+    f1 = f1_score(all_labels, all_preds, average='macro')  # 또는 'weighted'
+    return avg_loss, f1

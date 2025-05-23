@@ -11,8 +11,11 @@
         - **armstretch**데이터로 테스트
 ```
 data/
-├── CAT_labeled/               # armstretch 데이터셋
-└── CAT_raw/
+├── CAT_labeled/
+│   └── *.json                ← 각 동영상의 라벨링 정보가 담긴 JSON 파일
+├── CAT_raw/
+│   └── [동영상이름]/         ← 각 동영상별 프레임 이미지가 들어있는 폴더
+│       └── frame_*.jpg      ← 프레임 번호 및 타임스탬프가 붙은 이미지
 ```
 
 
