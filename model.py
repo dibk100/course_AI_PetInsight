@@ -1,8 +1,9 @@
 import torch
 import torch.nn as nn
 from torchvision import models
+from torchvision.models import resnet18, ResNet18_Weights
 
-def get_model(model_name: str, num_classes: int = 10):
+def get_model(model_name: str, num_classes: int = 6):
     """
     모델 이름에 따라 모델 객체를 반환
 
@@ -16,7 +17,7 @@ def get_model(model_name: str, num_classes: int = 10):
     model_name = model_name.lower()
     
     if model_name == 'resnet18':
-        model = models.resnet18(pretrained=True)
+        model = models.resnet18(pretrained=True,weights=ResNet18_Weights.DEFAULT)
         model.fc = nn.Linear(model.fc.in_features, num_classes)
         
     elif model_name == 'resnet50':

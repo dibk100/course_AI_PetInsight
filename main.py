@@ -11,7 +11,6 @@ import os
 
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
     model = get_model(model_name='resnet18', num_classes=6).to(device)                  ## 일단 resnet18으로 테스트
     train_loader, test_loader = get_dataloaders(batch_size=32,task='emotion')
 

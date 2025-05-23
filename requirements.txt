@@ -1,20 +1,17 @@
-# useing : pip install -r requirements.txt
-# PyTorch + CUDA 12.1
-torch==2.2.0+cu121
-torchvision==0.17.0+cu121
-torchaudio==2.2.0+cu121
+# pip install -r requirements.txt
 
-# Use PyTorch's extra index for CUDA wheels
---extra-index-url https://download.pytorch.org/whl/cu121
+# PyTorch + CUDA 11.2
+torch==2.2.0+cu112
+torchvision==0.17.2+cu112
+
 
 # Common ML/DL packages
-numpy<2
+numpy<2.0
 pandas
 matplotlib
 scikit-learn
-
-Pillow 
+pillow
 
 # Optional: model zoo and experiments
-timm          # pretrained vision models
-wandb         # experiment tracking
+timm
+wandb

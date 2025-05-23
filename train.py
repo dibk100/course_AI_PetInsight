@@ -8,15 +8,13 @@ def train(model, train_loader, criterion, optimizer, device):
     
     for batch in train_loader:
         inputs, labels = batch[0], batch[1]
-        print(len(inputs))
-        print(len(labels))
-
-        if isinstance(batch, tuple) and len(batch) == 2:
-            inputs, labels = batch
-        else:
-            raise ValueError("Unexpected batch structure from train_loader")
-
         inputs, labels = inputs.to(device), labels.to(device)
+        
+        
+        # print("Input shape:", inputs.shape)
+        # print("Input dtype:", inputs.dtype)
+        
+        # raise ValueError(">> 뭐가 문제일까")
 
         optimizer.zero_grad()
         outputs = model(inputs)

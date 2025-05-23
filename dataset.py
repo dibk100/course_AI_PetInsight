@@ -4,7 +4,20 @@ from PIL import Image
 from torch.utils.data import Dataset
 from torchvision import transforms
 from torch.utils.data import DataLoader, random_split
+from collections import Counter
 
+class LabelEncoder:
+    def __init__(self):
+        class_names = ['행복/즐거움', '편안/안정', '불안/슬픔', '화남/불쾌', '공포', '공격성']
+        self.class_to_idx = {cls_name: idx for idx, cls_name in enumerate(class_names)}
+        self.idx_to_class = {idx: cls_name for cls_name, idx in self.class_to_idx.items()}
+
+    def encode(self, class_name):
+        return self.class_to_idx[class_name]
+
+    def decode(self, index):
+        return self.idx_to_class[index]
+    
 class CatBehaviorDataset(Dataset):
     def __init__(self, json_dir, img_root_dir, transform=None, task='action',describe = False):
         """
@@ -19,9 +32,11 @@ class CatBehaviorDataset(Dataset):
         self.img_root_dir = img_root_dir
         self.transform = transform
         self.task = task
-        self.samples = []  # (image_path, label) 리스트
+        self.samples = []  # # (image_path, label_str) 리스트
         self.describe = describe        # 파일 상태 확인하고 싶을 때 True
-
+        self.label_encoder = LabelEncoder()     # 라벨 인코더 추가
+        self.label_counter = Counter()          # 라벨 통계
+        
         self._load_annotations()
 
     def _load_annotations(self):
@@ -53,7 +68,7 @@ class CatBehaviorDataset(Dataset):
             parent_dir = os.path.dirname(video_path)     # 20210105
             full_video_folder = f"{parent_dir}_{video_file}"  # 20210105_cat-armstretch-011278.mp4
             
-            # 여러 후보 경로 생성
+            # issue : 파일명 오류 때문에 확인하는 작업 추가 : 여러 후보 경로 생성
             candidate_folders = [
                 os.path.join(self.img_root_dir, full_video_folder),  # 20210105_cat-armstretch-011278.mp4
                 os.path.join(self.img_root_dir, video_name),         # cat-armstretch-011278
@@ -71,8 +86,8 @@ class CatBehaviorDataset(Dataset):
                 continue
             
             inspect_meta = data['metadata'].get('inspect', {})
-            label = inspect_meta.get(self.task)
-            if label is None:
+            label_str = inspect_meta.get(self.task)
+            if label_str is None:
                 continue
 
             for ann in data.get('annotations', []):
@@ -83,7 +98,8 @@ class CatBehaviorDataset(Dataset):
                 img_path = os.path.join(found_folder, img_name)
 
                 if os.path.exists(img_path):
-                    self.samples.append((img_path, label))
+                    self.samples.append((img_path, label_str))
+                    self.label_counter[label_str] += 1
                 else:
                     # print(f"[MISSING] {img_path}")
                     missing_file +=1
@@ -94,17 +110,21 @@ class CatBehaviorDataset(Dataset):
             print("미씽 프레임 수 : ",missing_file)
             print("패스 파일 수 : ",pass_file)
             print("스킵 폴더 수 : ",skip_file)
+            print("\n📊 라벨 통계:")
+            for label, count in self.label_counter.items():
+                print(f"{label:10s}: {count}개")
 
     def __len__(self):
         return len(self.samples)
 
     def __getitem__(self, idx):
-        img_path, label = self.samples[idx]
+        img_path, label_str  = self.samples[idx]
         image = Image.open(img_path).convert("RGB")
 
         if self.transform:
             image = self.transform(image)
 
+        label = self.label_encoder.encode(label_str)
         return image, label
 
 def get_transform():
