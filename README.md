@@ -1,21 +1,26 @@
 # Project : AI 🐾🐾
 - 2025년 1학기 인공지능(AI) 수업 기말 프로젝트(초안)   
-- 고양이의 행동 및 감정 상태를 분석하는 AI 모델 개발(멀티모달/이미지 분석)    
+- 고양이의 행동 및 감정 상태를 분석하는 AI 모델 개발(멀티모달)   
 
+### 🔄 To-Do
+- Task01 : 반려동물 분류 모델(이미지) 개발
+- Task02 : 반려동물 언어 번역기(LLM) 개발
+    - ISSUE : 언어 해석기 -> 번역기로 변경 시, 번역이 실제로 맞는지 성능 평가 어려움(전문가 필요)
 
 ### 📦 Data Description
-- AI-Hub : 반려동물 구분을 위한 동물 영상(https://aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&aihubDataSe=realm&dataSetSn=59)
-- 데이터수 : 총 500만(강아지, 고양이)
-    - emotion : 6개(공격성, 공포, 불안/슬픔, 편안, 행복/즐거움, 화남/불쾌)
-    - behavior : 12개(아치, 스트레칭, 꾹꾹이 etc) 
-        - **armstretch**데이터로 테스트
+- [AI-Hub : 반려동물 구분을 위한 동물 영상](https://aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&aihubDataSe=realm&dataSetSn=59)
+
 ```
-data/
-├── CAT_labeled/
-│   └── *.json                ← 각 동영상의 라벨링 정보가 담긴 JSON 파일
-├── CAT_raw/
-│   └── [동영상이름]/         ← 각 동영상별 프레임 이미지가 들어있는 폴더
-│       └── frame_*.jpg      ← 프레임 번호 및 타임스탬프가 붙은 이미지
+Json info :
+├── species(종)               # DOG, CAT(2)
+├── action(행동)              # DOG (13) / CAT (12)
+├── emotion(감정)             # 행복/즐거움,편안/안정,불안/슬픔,화남/불쾌,공포,공격성 (6)
+├── owner(반려인 정보)            
+│   └── situation(촬영 상황)  # emotion(감정)과 페어됨.
+│
+└── inspect(관찰 객체)        
+    ├── cemotion(감정)    
+    └── action(행동)
 ```
 
 
