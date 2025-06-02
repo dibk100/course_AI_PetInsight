@@ -1,38 +1,48 @@
 import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from model import load_model
 
-def load_model(model_path):
-    tokenizer = AutoTokenizer.from_pretrained(model_path)
-    model = AutoModelForCausalLM.from_pretrained(model_path)
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.to(device)
-    return tokenizer, model, device
-
-def generate_text(prompt, tokenizer, model, device, max_length=100, temperature=0.8):
+def generate_text(prompt, model, tokenizer, device, max_new_tokens=100):
     model.eval()
     inputs = tokenizer(prompt, return_tensors="pt").to(device)
     with torch.no_grad():
         outputs = model.generate(
-            **inputs,
-            max_length=max_length,
-            temperature=temperature,
-            top_p=0.95,
-            do_sample=True,
-            pad_token_id=tokenizer.eos_token_id
+            inputs["input_ids"],
+            attention_mask=inputs["attention_mask"],
+            max_new_tokens=max_new_tokens,
+            do_sample=True,           # 샘플링 활성화(더 자연스러운 생성)
+            top_p=0.95,               # nucleus sampling 확률
+            temperature=0.8,          # 생성 다양성 조절
+            eos_token_id=tokenizer.eos_token_id,
+            pad_token_id=tokenizer.pad_token_id,
         )
     return tokenizer.decode(outputs[0], skip_special_tokens=True)
 
 def main():
-    model_path = "gpt2"  # 또는 학습된 모델 저장 경로 (예: "./checkpoints/my_model/")
-    tokenizer, model, device = load_model(model_path)
+    import argparse
+    import yaml
 
-    print("LLM Inference 시작. 'exit' 입력 시 종료됩니다.")
-    while True:
-        prompt = input("Prompt 입력: ")
-        if prompt.lower() == "exit":
-            break
-        output = generate_text(prompt, tokenizer, model, device)
-        print(f"\n[Generated]\n{output}\n")
+    parser = argparse.ArgumentParser(description="LLaMA 3 LoRA Inference with Unsloth")
+    parser.add_argument('--config', type=str, required=True, help="Path to config YAML")
+    parser.add_argument('--prompt', type=str, required=True, help="Input prompt for generation")
+    parser.add_argument('--max_new_tokens', type=int, default=100, help="Max tokens to generate")
+    args = parser.parse_args()
+
+    with open(args.config, 'r') as f:
+        config = yaml.safe_load(f)
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    model, tokenizer = load_model(
+        config['model_name'],
+        max_seq_length=config.get('max_seq_length', 2048),
+        lora_config=config.get('lora', {})
+    )
+
+    model.to(device)
+
+    output_text = generate_text(args.prompt, model, tokenizer, device, max_new_tokens=args.max_new_tokens)
+    print("=== Generated Text ===")
+    print(output_text)
 
 if __name__ == "__main__":
     main()

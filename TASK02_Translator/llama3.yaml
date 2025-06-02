@@ -1,18 +1,19 @@
-model_name_or_path: meta-llama/Meta-Llama-3-7B
+model_name: unsloth/llama-3-8b
 train_file: ./data/train.json
 eval_file: ./data/eval.json
 output_dir: ./outputs
 logging_dir: ./logs
 batch_size: 2
-num_epochs: 3
-save_steps: 500
-logging_steps: 100
-wandb_project: llama3-tuning
+num_epochs: 5
+save_steps: 100
+logging_steps: 10
+wandb_project: llama3_testing
 
 lora:
-  r: 8
-  lora_alpha: 32
+  r: 16                           # 4~16 : 작을수록 빠르지만 표현력이 낮음
+  lora_alpha: 16                  # 스케일링 계수, 모델이 얼마나 로라를 적용할지 조절
   lora_dropout: 0.1
-  target_modules:
+  target_modules:                 # ["q_proj", "v_proj", "gate_proj", "up_proj", "down_proj"] attention + MLP튜닝
     - q_proj
     - v_proj
+

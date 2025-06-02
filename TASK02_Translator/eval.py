@@ -1,15 +1,15 @@
-import json
 import torch
 from torch.utils.data import DataLoader
-from model import load_model_and_tokenizer
+from model import load_model
 from dataset import InstructionDataset
 
-def evaluate_model(config_path):
-    with open(config_path) as f:
-        config = json.load(f)
-
+def evaluate_model(config):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model, tokenizer = load_model_and_tokenizer(config['model_name_or_path'], device)
+    model, tokenizer = load_model(
+        config['model_name'],
+        max_seq_length=config.get('max_seq_length', 2048),
+        lora_config=config.get('lora', {})
+    )
     model.eval()
 
     eval_dataset = InstructionDataset(config['eval_file'], tokenizer)
