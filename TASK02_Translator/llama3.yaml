@@ -1,0 +1,18 @@
+model_name_or_path: meta-llama/Meta-Llama-3-7B
+train_file: ./data/train.json
+eval_file: ./data/eval.json
+output_dir: ./outputs
+logging_dir: ./logs
+batch_size: 2
+num_epochs: 3
+save_steps: 500
+logging_steps: 100
+wandb_project: llama3-tuning
+
+lora:
+  r: 8
+  lora_alpha: 32
+  lora_dropout: 0.1
+  target_modules:
+    - q_proj
+    - v_proj
