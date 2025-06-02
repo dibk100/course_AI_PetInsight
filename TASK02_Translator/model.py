@@ -1,3 +1,4 @@
+import torch
 from unsloth import FastLanguageModel
 from transformers import AutoTokenizer
 
@@ -5,7 +6,7 @@ def load_model(model_name, max_seq_length, lora_config=None):
     model, tokenizer = FastLanguageModel.from_pretrained(
         model_name = model_name,
         max_seq_length = max_seq_length,
-        dtype = "auto",  # "auto" = fp16 if available
+        dtype = torch.float16,  # "auto" = fp16 if available
         load_in_4bit = True,  # or False if you want fp16
     )
     model = FastLanguageModel.get_peft_model(
