@@ -8,7 +8,7 @@ import os
 
 def main():
     load_dotenv(verbose=True)               # .env심기, wandb로그인 key
-    parser = argparse.ArgumentParser(description="IMAGE multi-label classification")
+    parser = argparse.ArgumentParser(description="IMAGE multi-head classification")
     parser.add_argument('--mode', choices=['train', 'eval'], required=True)
     parser.add_argument('--config', type=str, required=True, help='Path to config YAML')
     args = parser.parse_args()
@@ -27,9 +27,6 @@ def main():
             assert False, "WANDB_API_KEY environment variable is missing."
         
         train_model(config)
-        # best_model_path,best_epoch = train_model_kfold_and_save_best(config)
-        # config['best_epoch'] = best_epoch
-        # retrain_best_model_on_full_data(config, best_model_path)
         wandb.finish()
         
     elif args.mode == 'eval':

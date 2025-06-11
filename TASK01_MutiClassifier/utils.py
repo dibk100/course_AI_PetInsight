@@ -12,15 +12,6 @@ def set_seed(seed):
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
-def compute_metrics(eval_pred):
-    predictions, labels = eval_pred
-    predictions = predictions.squeeze()
-    labels = labels.squeeze()
-    mse = mean_squared_error(labels, predictions)
-    rmse = np.sqrt(mse)
-    r2 = r2_score(labels, predictions)
-    return {'mse': mse, 'rmse': rmse, 'r2': r2}
-
 def save_best_model(model, save_dir, base_name, epoch, val_loss,score):
     timestamp = datetime.datetime.now().strftime("%m%d_%H%M")
 
@@ -28,9 +19,17 @@ def save_best_model(model, save_dir, base_name, epoch, val_loss,score):
     if not os.path.exists(ckpt_dir):
         os.makedirs(ckpt_dir)
 
-    model_filename = f"{timestamp}_epoch{epoch}_valLoss{val_loss:.4f}_rmse_{score:.4f}.pth"
+    model_filename = f"{timestamp}_epoch{epoch}_valLoss{val_loss:.4f}_macro_f1_{score:.4f}.pth"
     ckpt_path = os.path.join(ckpt_dir, model_filename)
 
     torch.save(model.state_dict(), ckpt_path)
-    print(f"✅ Best model saved: {ckpt_path} (rmse_score: {score:.4f})")
-    return ckpt_path
+    print(f"✅ Best model saved: {ckpt_path} (macro_f1: {score:.4f})")
+    
+    return 
+
+def get_label_maps_from_config(config):
+    return {
+        'action': {label: i for i, label in enumerate(config['label_names']['action'])},
+        'emotion': {label: i for i, label in enumerate(config['label_names']['emotion'])},
+        'situation': {label: i for i, label in enumerate(config['label_names']['situation'])},
+    }
