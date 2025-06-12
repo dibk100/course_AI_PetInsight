@@ -94,13 +94,13 @@ def train_model(config):
         })
 
         # ✅ Macro F1 기준으로 모델 저장
-    if macro_f1 > best_score:
-        best_score = macro_f1
-        save_best_model(
-            model,
-            save_dir=config['save_path'],
-            base_name=config['model_name'],
-            epoch=epoch,
-            val_loss=val_loss,
-            score=best_score,
-        )
+        if macro_f1 > best_score:
+            best_score = macro_f1
+            save_best_model(
+                model,
+                save_dir=config['save_path'],
+                base_name=config['model_name'],
+                epoch=epoch,
+                val_loss=val_loss,
+                score=best_score,
+            )
