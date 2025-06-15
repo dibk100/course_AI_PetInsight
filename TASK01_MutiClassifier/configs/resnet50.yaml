@@ -1,9 +1,9 @@
 # 모델 resnet34, resnet50
-model_name : "resnet18"
+model_name : "resnet50"
 
 # 모델 저장 경로
-save_path: "./saved_models_False"
-best_model_path: "resnet18/0615_1720_epoch7_valLoss0.3064_macro_f1_0.9693.pth"       
+save_path: "./saved_models"
+best_model_path: ""       
 
 # 데이터 경로 설정
 data:
@@ -11,9 +11,9 @@ data:
   val_csv: ../data/val.csv
   test_csv: ../data/test.csv
 
-batch_size: 8       # 데이터 작고, 클래스 불균형 → 작은 배치 사이즈로 더 자주 업데이트
+batch_size: 16       # 데이터 작고, 클래스 불균형 → 작은 배치 사이즈로 더 자주 업데이트
 epochs: 30
-learning_rate: 1e-3       # 1e-3~1e-4   3e-5
+learning_rate: 5e-5       # 1e-3~1e-4   3e-5
 seed: 42
 device: "cuda" 
 
