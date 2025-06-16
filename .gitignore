@@ -17,6 +17,8 @@ checkpoints/
 outputs/
 log/
 unsloth_compiled_cache/
+saved_models/
+*.jpg
 
 ### Linux ###
 *~

@@ -93,7 +93,7 @@ def evaluate_model(config, split='test'):
 
     # 데이터셋 로딩
     dataset = get_dataset(config, split=split)
-    loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
+    loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=4, pin_memory=True)
     
     # 모델 초기화 및 불러오기
     model_wrapper = MultiLabelImageClassifier(

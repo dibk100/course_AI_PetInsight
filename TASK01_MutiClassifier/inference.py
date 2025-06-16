@@ -34,7 +34,7 @@ def inference_on_folder(image_dir: Path, config):
         pretrained=False
     )
     model = model_wrapper.get_model()
-    model_path = os.path.join(config['save_path'], config['best_model_path'])
+    model_path = os.path.join(config['save_path'], config['model_name'],config['best_model_path'])
     assert os.path.exists(model_path), f"모델 경로 {model_path}가 존재하지 않습니다."
 
     model.load_state_dict(torch.load(model_path, map_location=device))

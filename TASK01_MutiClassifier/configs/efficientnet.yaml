@@ -1,9 +1,9 @@
 # 모델 resnet34, resnet50
-model_name : "efficientnet_b0"
+model_name : "efficientnet_b4"
 
 # 모델 저장 경로
 save_path: "./saved_models"
-best_model_path: "efficientnet_b0/"       
+best_model_path: "0616_1144_epoch5_valLoss0.3613_macro_f1_0.9576.pth"       
 
 # 데이터 경로 설정
 data:
@@ -15,7 +15,7 @@ batch_size: 16       # 데이터 작고, 클래스 불균형 → 작은 배치 �
 epochs: 30
 learning_rate: 5e-5       # 1e-3~1e-4   3e-5
 seed: 42
-device: "cuda" 
+device: "cuda:2" 
 
 # wandb 설정
 wandb_project: "PetBabel_project"

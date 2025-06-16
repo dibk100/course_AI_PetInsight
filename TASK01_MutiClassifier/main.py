@@ -5,6 +5,8 @@ import yaml
 import wandb
 from dotenv import load_dotenv
 import os
+from train_ddp import train_loop
+import torch.multiprocessing as mp
 
 def main():
     load_dotenv(verbose=True)               # .env심기, wandb로그인 key
@@ -27,6 +29,8 @@ def main():
             assert False, "WANDB_API_KEY environment variable is missing."
         
         train_model(config)
+        # world_size = torch.cuda.device_count()
+        # mp.spawn(train_loop, args=(world_size, config), nprocs=world_size, join=True)
         wandb.finish()
         
     elif args.mode == 'eval':

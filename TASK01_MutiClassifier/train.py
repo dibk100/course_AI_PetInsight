@@ -8,6 +8,7 @@ from utils import *
 from dataset import *
 from model import *
 from eval import *
+import os
 
 def train_model(config):
     set_seed(config['seed'])

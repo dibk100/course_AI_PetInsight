@@ -1,9 +1,10 @@
 # 모델 resnet34, resnet50
-model_name : "ConvNeXt-Base"
+model_name : "convnext_base"
+pretrained : True
 
 # 모델 저장 경로
-save_path: "./saved_models_False"
-best_model_path: "resnet18/0615_1720_epoch7_valLoss0.3064_macro_f1_0.9693.pth"       
+save_path: "./saved_models"
+best_model_path: "0616_1608_epoch13_valLoss0.2372_macro_f1_0.9789.pth"       
 
 # 데이터 경로 설정
 data:
@@ -15,7 +16,7 @@ batch_size: 16       # 데이터 작고, 클래스 불균형 → 작은 배치 �
 epochs: 30
 learning_rate: 5e-5       # 1e-3~1e-4   3e-5
 seed: 42
-device: "cuda" 
+device: "cuda:3" 
 
 # wandb 설정
 wandb_project: "PetBabel_project"
