@@ -1,0 +1,17 @@
+# pip install -r requirements.txt
+
+# PyTorch + CUDA 11.2
+torch==2.2.0+cu112
+torchvision==0.17.2+cu112
+
+
+# Common ML/DL packages
+numpy<2.0
+pandas
+matplotlib
+scikit-learn
+pillow
+
+# Optional: model zoo and experiments
+timm
+wandb
