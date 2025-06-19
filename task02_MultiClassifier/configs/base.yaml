@@ -4,6 +4,7 @@ model_name : "resnet18"
 # 모델 저장 경로
 save_path: "./saved_models"
 best_model_path: "0616_1633_epoch7_valLoss0.2683_macro_f1_0.9732.pth"       
+test_image_path : "./inference_data/cat-tailing-025042/frame_132_timestamp_4400.jpg"    
 
 # 데이터 경로 설정
 data:
