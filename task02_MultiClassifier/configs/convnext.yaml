@@ -5,7 +5,7 @@ pretrained : True
 # 모델 저장 경로
 save_path: "./saved_models"
 best_model_path: "0616_1608_epoch13_valLoss0.2372_macro_f1_0.9789.pth"       
-test_image_path : "./inference_data/cat-tailing-025042/frame_132_timestamp_4400.jpg"    
+test_image_path : "./inference_data/home/frame_019.jpg"    
 
 # 데이터 경로 설정
 data:
