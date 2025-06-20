@@ -39,7 +39,7 @@ class MultiLabelVideoTransformerClassifier(nn.Module):
 
         # 4. 분류 헤드
         self.action_head = nn.Linear(self.feature_dim, num_actions)
-        self.emotion_head = nn.Linear(self.feature_dim, num_emotions)
+        # self.emotion_head = nn.Linear(self.feature_dim, num_emotions)
         self.situation_head = nn.Linear(self.feature_dim, num_situations)
         
         self.dropout = nn.Dropout(0.2)
@@ -61,7 +61,7 @@ class MultiLabelVideoTransformerClassifier(nn.Module):
         # 멀티 분류 head
         return (
             self.action_head(pooled),
-            self.emotion_head(pooled),
+            # self.emotion_head(pooled),
             self.situation_head(pooled)
         )
         

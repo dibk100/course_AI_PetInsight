@@ -1,84 +1,87 @@
 import os
-import json
-import torch
+import pandas as pd
 from torch.utils.data import Dataset
 from PIL import Image
-from torchvision import transforms
+import torchvision.transforms as transforms
+from typing import Optional, Callable, Dict, Any
+import torch
 
-class VideoDataset(Dataset):
-    def __init__(self, video_dirs, label_encoder, transform=None, max_frames=100):
-        self.video_dirs = video_dirs          # 각 동영상 폴더 경로 리스트
-        self.label_encoder = label_encoder
-        self.transform = transform or transforms.Compose([
-            transforms.Resize((224, 224)),
-            transforms.ToTensor()
-        ])
+class CatVideoDataset(Dataset):
+    def __init__(
+        self,
+        csv_path: str,
+        root_dir: str,
+        label2idx_action: Optional[Dict[str, int]] = None,
+        label2idx_emotion: Optional[Dict[str, int]] = None,
+        label2idx_situation: Optional[Dict[str, int]] = None,
+        transform: Optional[Callable] = None,
+        max_frames: int = 100,
+    ):
+        self.df = pd.read_csv(csv_path)
+        self.root_dir = root_dir
+        self.transform = transform
         self.max_frames = max_frames
 
-    def __len__(self):
-        return len(self.video_dirs)
+        self.label2idx_action = label2idx_action or {label: i for i, label in enumerate(self.df['action'].unique())}
+        self.label2idx_emotion = label2idx_emotion or {label: i for i, label in enumerate(self.df['emotion'].unique())}
+        self.label2idx_situation = label2idx_situation or {label: i for i, label in enumerate(self.df['situation'].unique())}
 
-    def __getitem__(self, idx):
-        video_path = self.video_dirs[idx]
+        self.idx2label_action = {v: k for k, v in self.label2idx_action.items()}
+        self.idx2label_emotion = {v: k for k, v in self.label2idx_emotion.items()}
+        self.idx2label_situation = {v: k for k, v in self.label2idx_situation.items()}
 
-        # --- 1. Load JSON
-        json_file = [f for f in os.listdir(video_path) if f.endswith(".json")]
-        if not json_file:
-            raise FileNotFoundError(f"JSON not found in {video_path}")
-        with open(os.path.join(video_path, json_file[0]), "r", encoding="utf-8") as f:
-            data = json.load(f)
+    def __len__(self) -> int:
+        return len(self.df)
 
-        # --- 2. Extract labels & encode
-        meta = data["metadata"]
-        inspect = meta.get("inspect", {})
-        owner = meta.get("owner", {})
+    def __getitem__(self, idx: int) -> Dict[str, Any]:
+        row = self.df.iloc[idx]
+        video_folder = os.path.join(self.root_dir, row['video_name'])
+        frame_count = row['frames']
 
-        action_str = inspect.get("action") or meta.get("action")
-        emotion_str = inspect.get("emotion") or owner.get("emotion")
-        situation_str = owner.get("situation")
+        label_action = self.label2idx_action[row['action']]
+        label_emotion = self.label2idx_emotion[row['emotion']]
+        label_situation = self.label2idx_situation[row['situation']]
 
-        try:
-            action_label = self.label_encoder["action"][action_str]
-            emotion_label = self.label_encoder["emotion"][emotion_str]
-            situation_label = self.label_encoder["situation"][situation_str]
-        except KeyError as e:
-            raise ValueError(f"Label not found in encoder: {e}")
+        frames = []
+        for i in range(min(self.max_frames, frame_count)):
+            frame_path = os.path.join(video_folder, f"{i+1:06d}.jpg")
+            if os.path.exists(frame_path):
+                image = Image.open(frame_path).convert("RGB")
+                if self.transform:
+                    image = self.transform(image)
+                frames.append(image)
 
-        # --- 3. Load image frames
-        frame_files = sorted([f for f in os.listdir(video_path) if f.endswith(".jpg")])
-        frame_files = frame_files[:self.max_frames]
-        images = []
+        if len(frames) < self.max_frames:
+            if frames:
+                pad_frame = frames[-1]
+            else:
+                pad_frame = Image.new("RGB", (224, 224))
+                if self.transform:
+                    pad_frame = self.transform(pad_frame)
+            while len(frames) < self.max_frames:
+                frames.append(pad_frame)
 
-        for fname in frame_files:
-            img_path = os.path.join(video_path, fname)
-            img = Image.open(img_path).convert("RGB")
-            img = self.transform(img)
-            images.append(img)
+        frames_tensor = torch.stack(frames)  # (T, C, H, W)
 
-        # --- 4. Pad if too short
-        T = len(images)
-        if T < self.max_frames:
-            pad_tensor = torch.zeros_like(images[0])
-            for _ in range(self.max_frames - T):
-                images.append(pad_tensor)
+        return {
+            "video_name": row['video_name'],
+            "frames": frames_tensor,
+            "label_action": label_action,
+            "label_emotion": label_emotion,
+            "label_situation": label_situation
+        }
 
-        frames = torch.stack(images)  # [T, C, H, W]
-        labels = torch.tensor([action_label, emotion_label, situation_label], dtype=torch.long)
+def get_dataset(config: dict, split: str = 'train') -> Dataset:
+    csv_path = config['data'][f'{split}_csv']
+    root_dir = config['data'].get('root_dir', './frames')
+    max_frames = config.get('max_frames', 100)
 
-        return frames, labels
+    label_maps = {
+        'action': {label: i for i, label in enumerate(config['label_names']['action'])},
+        'emotion': {label: i for i, label in enumerate(config['label_names']['emotion'])},
+        'situation': {label: i for i, label in enumerate(config['label_names']['situation'])},
+    }
 
-def get_dataset(config, split='train'):
-    """
-    config에 지정된 CSV 경로와 transform, label_maps를 사용해
-    split별 Dataset 객체를 반환하는 함수
-
-    split: 'train', 'val', 'test' 중 하나
-    """
-    csv_path = config['data'][f'{split}_csv']  # 예: config['data']['train_csv'] = './data/train.csv'
-    label_maps = config.get('label_maps', None)
-    
-    # 기본 transform, 필요시 config에 추가 가능
-    from torchvision import transforms
     if split == 'train':
         transform = transforms.Compose([
             transforms.Resize((224, 224)),
@@ -87,7 +90,7 @@ def get_dataset(config, split='train'):
             transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                  std=[0.229, 0.224, 0.225]),
         ])
-    else:  # val, test
+    else:
         transform = transforms.Compose([
             transforms.Resize((224, 224)),
             transforms.ToTensor(),
@@ -95,5 +98,20 @@ def get_dataset(config, split='train'):
                                  std=[0.229, 0.224, 0.225]),
         ])
 
-    dataset = MultiLabelDataset(csv_path, transform=transform, label_maps=label_maps)
+    dataset = CatVideoDataset(
+        csv_path=csv_path,
+        root_dir=root_dir,
+        label2idx_action=label_maps['action'],
+        label2idx_emotion=label_maps['emotion'],
+        label2idx_situation=label_maps['situation'],
+        transform=transform,
+        max_frames=max_frames,
+    )
     return dataset
+
+def collate_fn(batch):
+    frames = torch.stack([item['frames'] for item in batch])  # (B, T, C, H, W)
+    labels_action = torch.tensor([item['label_action'] for item in batch])
+    labels_emotion = torch.tensor([item['label_emotion'] for item in batch])
+    labels_situation = torch.tensor([item['label_situation'] for item in batch])
+    return frames, labels_action, labels_emotion, labels_situation
