@@ -1,0 +1,65 @@
+model_name: "transformer"
+backbone_name : "resnet18"
+
+# 모델 저장 경로
+save_path: "./saved_models"
+best_model_path: ""       
+test_image_path : ""    
+
+# 데이터 경로 설정
+data:
+  train_csv: ../data/train_fin.csv
+  val_csv: ../data/val_fin.csv
+  test_csv: ../data/test_fin.csv
+  root_dir: "../data/CAT_image_2nd"   # 프레임 이미지 저장 경로 (예: ./frames/video_name/000001.jpg ...)
+
+batch_size: 4       # 데이터 작고, 클래스 불균형 → 작은 배치 사이즈로 더 자주 업데이트
+epochs: 20
+learning_rate: 1e-3       # 1e-3~1e-4   3e-5
+seed: 42
+device: "cuda:3" 
+
+# wandb 설정
+wandb_project: "PetBabel_project_task03"
+
+
+label_names:
+  action:                     # 12개
+    - 걷거나 달리는 동작
+    - 그루밍하는 동작
+    - 꼬리를 흔드는 동작
+    - 납작 엎드리는 동작
+    - 머리를 들이대는 동작
+    - 발을 숨기고 웅크리고 앉는 동작
+    - 배를 보여주는 동작
+    - 앞발로 꾹꾹 누르는 동작
+    - 옆으로 눕는 동작
+    - 좌우로 뒹구는 동작
+    - 팔을 뻗어 휘적거리는 동작
+    - 허리를 아치로 세우는 동작
+
+  emotion:                  # 6개    
+    - 공격성
+    - 공포
+    - 불안/슬픔
+    - 편안/안정
+    - 행복/즐거움
+    - 화남/불쾌
+
+  situation:        # 15개
+    - 기타
+    - 낯선 사람/동물
+    - 낯선 소리
+    - 낯선 장소
+    - 먹을 것/장난감이 앞에 있을 때
+    - 미용/위생관리
+    - 밥그릇, 장난감과 같은 소유물을 만질 때
+    - 보호자 돌아옴
+    - 보호자에게 혼남
+    - 보호자와 분리
+    - 산책 중/산책 준비
+    - 싫어하는 부위 접촉
+    - 잠들기 전/같이 누움
+    - 편안한 접촉
+    - 휴식/자기 공간
+

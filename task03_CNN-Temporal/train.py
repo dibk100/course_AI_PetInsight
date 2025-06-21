@@ -6,14 +6,14 @@ import wandb
 import torch.nn as nn
 from utils import *
 from dataset import *
-from model_2TASK import *
+from model import *
 from eval import *
-import os
+
 
 def train_model(config):
+    torch.cuda.empty_cache()
     set_seed(config['seed'])
     device = config['device']
-
     
     # 자동 run_name 생성
     run_name = f"{config['model_name']}_lr{config['learning_rate']}_bs{config['batch_size']}_ep{config['epochs']}"
@@ -27,10 +27,12 @@ def train_model(config):
     val_loader = DataLoader(val_dataset, batch_size=config['batch_size'], shuffle=False, collate_fn=collate_fn,num_workers=4,pin_memory=True)
 
     # 모델 초기화
-    model_wrapper = MultiLabelVideoTransformerClassifier(
+    model_class = MODEL_CLASSES.get(config['model_name'].lower(), MultiLabelVideoTransformerClassifier)
+    model_wrapper = model_class(
         num_actions=len(config['label_names']['action']),
+        num_emotions=len(config['label_names']['emotion']),
         num_situations=len(config['label_names']['situation']),
-        backbone_name=config['model_name'],
+        backbone_name=config.get('backbone_name', 'resnet18'),
         pretrained=config.get('pretrained', True)
     )
     model = model_wrapper.get_model()
@@ -41,27 +43,53 @@ def train_model(config):
     num_training_steps = config['epochs'] * len(train_loader)
     lr_scheduler = get_scheduler("linear", optimizer=optimizer, num_warmup_steps=0, num_training_steps=num_training_steps)
     criterion_action = nn.CrossEntropyLoss()
+    criterion_emotion = nn.CrossEntropyLoss()
     criterion_situation = nn.CrossEntropyLoss()
 
     best_score = 0
-
+    
+    # conv1 출력 저장용
+    conv1_outputs = []
+    def hook_fn(module, input, output):
+        conv1_outputs.append(output.detach().cpu())
+    # hook 등록
+    model.shared_encoder.conv1.register_forward_hook(hook_fn)
+    
     for epoch in range(config['epochs']):
         model.train()
         total_loss = 0
 
-        for frames, y_action, y_situation in train_loader:
+        for batch_idx, (frames, y_action, y_emotion, y_situation) in enumerate(train_loader):
             optimizer.zero_grad()
             
             frames = frames.to(device)
             y_action = y_action.to(device)
+            y_emotion = y_emotion.to(device)
             y_situation = y_situation.to(device)
-            outputs_action, outputs_situation = model(frames)
+            outputs_action, outputs_emotion, outputs_situation = model(frames)
             
             loss_a = criterion_action(outputs_action, y_action)
+            loss_e = criterion_emotion(outputs_emotion, y_emotion)
             loss_s = criterion_situation(outputs_situation, y_situation)
 
-            loss = loss_a + loss_s
+            loss = loss_a + loss_e + loss_s
             loss.backward()
+            
+            # gradient 체크 (디버깅용)
+            # if batch_idx == 0:
+                # print(f"--- Epoch {epoch}, Batch {batch_idx} ---")
+                # for name, param in model.named_parameters():
+                #     if param.grad is None:
+                #         print(f"[Grad Check] {name} has no gradient!")
+                #     else:
+                #         print(f"[Grad Check] {name} grad norm: {param.grad.norm().item()}")
+                #     if "conv1" in name:
+                #         print(f"[Check] {name} requires_grad: {param.requires_grad}")
+            # if batch_idx == 0:
+            #     print(f"[conv1 output] shape: {conv1_outputs[0].shape}")
+            #     print(f"[conv1 output] mean: {conv1_outputs[0].mean().item():.4f}, std: {conv1_outputs[0].std().item():.4f}, max: {conv1_outputs[0].max().item():.4f}")
+            #     conv1_outputs.clear()  # 다음 배치 출력을 위해 비워줌
+            
             optimizer.step()
             lr_scheduler.step()
 
@@ -90,7 +118,7 @@ def train_model(config):
             'partial_score': partial_score,
             'exact_match_acc': exact_match_acc,
             'label_wise_acc/action': label_wise_acc['action'],
-
+            'label_wise_acc/emotion': label_wise_acc['emotion'],
             'label_wise_acc/situation': label_wise_acc['situation'],
         })
 

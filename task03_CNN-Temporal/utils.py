@@ -26,3 +26,10 @@ def save_best_model(model, save_dir, base_name, epoch, val_loss,score):
     print(f"✅ Best model saved: {ckpt_path} (macro_f1: {score:.4f})")
     
     return 
+
+def get_label_maps_from_config(config):
+    return {
+        'action': {label: i for i, label in enumerate(config['label_names']['action'])},
+        'emotion': {label: i for i, label in enumerate(config['label_names']['emotion'])},
+        'situation': {label: i for i, label in enumerate(config['label_names']['situation'])},
+    }

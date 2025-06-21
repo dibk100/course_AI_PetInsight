@@ -6,17 +6,32 @@ CNN-Temporal based multi-task video classification model
 
 ### 📁 Data Structure
 ```
-CAT_image/
-├── 20201028_cat-arch-000156.mp4/                     
-│   ├── 20201028_cat-arch-000156.mp4.json
+CAT_image_2nd/
+├── 20201028_cat-arch-000156.mp4/
 │   ├── frame_0_timestamp_0.jpg
-│   ├── frame_102_timestamp_6800.jpg
-│   └──  ~.jpg
-├── cat-arch-011926/   
-│   ├── cat-arch-011926.json
-│   ├── frame_10_timestamp_400.jpg
-│   ├── frame_135_timestamp_5400.jpg
-│   └──  ~.jpg                  
+│   ├── frame_12_timestamp_800.jpg
+│   └── ... (프레임 이미지들)
+├── 20201028_cat-arch-000156.mp4.json    # 해당 영상 메타데이터 (프레임별 timestamp, keypoints, bbox 등)
+├── cat-armstretch-080706/
+│   ├── cat-armstretch-080706.json
+│   ├── frame_0.jpg
+│   ├── frame_1.jpg
+│   └── ... (프레임 이미지들)
 └── ~    
 
 ```
+### 📁 dataset.py
+```
+CatVideoDataset
+ ├─ __getitem__ : (T, C, H, W) 텐서 반환
+ ├─ frame 부족 시 padding
+ ├─ action/emotion/situation 라벨 인코딩
+ └─ PIL → Tensor 변환 transform 적용
+
+get_dataset()
+ └─ config로부터 label map, transform 구성 후 dataset 반환
+
+collate_fn()
+ └─ batch 단위 텐서 묶기 (frames, 3가지 라벨)
+```
+
