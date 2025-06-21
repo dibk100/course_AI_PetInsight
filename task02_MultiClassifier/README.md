@@ -1,10 +1,11 @@
-# Task02_MultiClassifier
-반려동물(고양이) Multi-Task_Multi-Labels Classification 모델 개발
+# Task02_MultiClassifier 🐾🐾
+반려동물(고양이) Multi-Task Classification 모델 개발   
+- 🔄 TASK : 행동(Action) - 감정(Emotion) - 상황(Situation) 분류
 
 ## 📂 Dataset Info
 - 총 JSON 파일 수(= 동영상 수): 829
 - 각 태스크별 라벨 구성:
-  - [ACTION] : 13개
+  - [ACTION] : 12개
   - [EMOTION] : 6개
   - [SITUATION] : 17개
 
@@ -72,16 +73,26 @@ python inference.py --input_dir ./inference_data/test_images --config ./configs/
 ```
 
 ## 🧪 실험 기록
-| Metric                    | ResNet18 | ResNet50 | EfficientNet-B4 | ConvNeXt-Base |
-|---------------------------|----------|----------|------------------|---------------|
-| **Loss**                  | 0.3741   | 0.3012   | 0.3799           | **0.2139**    |
-| **Macro F1**              | 0.9650   | 0.9550   | 0.9563           | **0.9780**    |
-| **Micro F1**              | 0.9771   | 0.9722   | 0.9697           | **0.9847**    |
-| **Partial Match Score**   | 0.3310   | 0.3314   | 0.3313           | **0.3324**    |
-| **Exact Match Accuracy**  | 0.9615   | 0.9497   | 0.9431           | **0.9725**    |
-| **Acc (Action)**          | 0.9743   | 0.9699   | 0.9674           | **0.9835**    |
-| **Acc (Emotion)**         | 0.9846   | 0.9820   | 0.9780           | **0.9912**    |
-| **Acc (Situation)**       | 0.9725   | 0.9648   | 0.9637           | **0.9795**    |
+| base_model                  | resnet18 | resnet50 | *efficientNet | *convNext | *swin |
+|-----------------------------|----------|----------|-----------------|---------------|------------------------------|
+| Loss                         | 0.3741   | 0.3012   | 0.3799          | 0.2139        | 0.2094                       |
+| Macro F1                     | 0.9650   | 0.9550   | 0.9563          | 0.9780        | 0.9761                       |
+| Micro F1                     | 0.9771   | 0.9722   | 0.9697          | 0.9847        | 0.9845                       |
+| Partial Match Score          | 0.3310   | 0.3314   | 0.3313          | 0.3324        | 0.3322                       |
+| Exact Match Acc              | 0.9615   | 0.9497   | 0.9431          | 0.9725        | 0.9714                       |
+| Label-wise Acc_action        | 0.9743   | 0.9699   | 0.9674          | 0.9835        | 0.9835                       |
+| Label-wise Acc_emotion       | 0.9846   | 0.9820   | 0.9780          | 0.9912        | 0.9905                       |
+| Label-wise Acc_situation     | 0.9725   | 0.9648   | 0.9637          | 0.9795        | 0.9795                       |
+
+*efficientNet-b4   
+*convNext-base   
+*swin_base_patch4_window7_224   
+
+> 🔍 **결과 요약**:
+- **ConvNeXt-Base**가 전반적인 성능(모든 지표)에서 가장 우수함을 보였음.
+- ResNet18은 가장 가벼운 모델임에도 불구하고 비교적 높은 성능을 유지.
+- 모든 모델에서 Exact Match Accuracy가 94% 이상으로, 세 가지 태스크를 동시에 예측하는 데에도 높은 정확도 달성.
+
 <details> 
 <summary>Training Settings</summary>   
 

@@ -9,29 +9,25 @@
 
 ```
 Json info :
-├── species(종)               # DOG, CAT(2)
-├── action(행동)              # DOG (13) / CAT (12)
-├── emotion(감정)             # 행복/즐거움,편안/안정,불안/슬픔,화남/불쾌,공포,공격성 (6)
+├── species(종)               # CAT
+├── action(행동)              # 12가지 행동 라벨
+├── emotion(감정)             # 6가지 감정 라벨
 ├── owner(반려인 정보)            
-│   └── situation(촬영 상황)  # emotion(감정)과 페어됨.
+│   └── situation(촬영 상황)  # inspect의 emotion(감정)과 페어함.
 │
 └── inspect(관찰 객체)        
-    ├── cemotion(감정)    
+    ├── emotion(감정)    
     └── action(행동)
 ```
-
 
 ### 📁 Folder Structure
 ```
 task01_Classifier/      
-├── data/               # 데이터셋
-├── dataset.py          # 데이터 로딩 및 전처리
-├── model.py            # 모델들 정리
-├── train.py            # 학습 루프
-├── eval.py             # 성능 평가
-├── main.py             # 전체 파이프라인 실행 (학습 + 평가)
-├── outputs/            # 모델 저장, 예측 결과 등 출력물 저장용
-│   └── checkpoints/    # 학습된 모델 저장
-└── requirements.txt    # 추후에 작성하기
+├── Action_preprocess_classification_ResNet18.ipynb   
+├── Action_classification_EfficientNet-b0.ipynb
+├── Action_classification_ResNet50.ipynb
+├── Action_classification_ViTB16.ipynb
+├── Action_inference_EfficientNet-b0.ipynb
+└── Emotion_Situation_classificaton.ipynb             
 ```
 
