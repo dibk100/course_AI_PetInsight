@@ -19,6 +19,7 @@ log/
 unsloth_compiled_cache/
 saved_models/
 *.jpg
+saved_models_*/
 
 ### Linux ###
 *~
