@@ -20,6 +20,8 @@ unsloth_compiled_cache/
 saved_models/
 *.jpg
 saved_models_*/
+inference_data/
+*.json
 
 ### Linux ###
 *~
