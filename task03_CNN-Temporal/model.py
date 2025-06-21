@@ -80,11 +80,11 @@ class MultiLabelVideoTransformerClassifier(nn.Module):
         # encoded = self.norm(encoded)        # 정규화 : transforemer 내부에 norm이 적용되고 있ㅇㄹ 수 있음
         
         # Attention-based pooling
-        attn_scores = self.attention_pooling(encoded)        # [B, T, 1]
-        attn_weights = torch.softmax(attn_scores, dim=1)     # [B, T, 1]
-        pooled = (encoded * attn_weights).sum(dim=1)         # [B, D]
+        # attn_scores = self.attention_pooling(encoded)        # [B, T, 1]
+        # attn_weights = torch.softmax(attn_scores, dim=1)     # [B, T, 1]
+        # pooled = (encoded * attn_weights).sum(dim=1)         # [B, D]
         
-        #pooled = encoded.mean(dim=1)           # [B, feature_dim] (평균 pooling) -> 모든 프레임의 feature를 동등하게 평균함. 중요 프레임 구분을 못함.
+        pooled = encoded.mean(dim=1)           # [B, feature_dim] (평균 pooling) -> 모든 프레임의 feature를 동등하게 평균함. 중요 프레임 구분을 못함.
         pooled = self.dropout(pooled)        # dropout 적용 :: 위치 고민
 
         # 시각화용으로 반환
@@ -153,9 +153,10 @@ class MultiLabelVideoLSTMClassifier(nn.Module):
         lstm_out, (h_n, c_n) = self.lstm(feats)  # lstm_out: [B, T, hidden_dim]
 
         # Attention pooling on lstm_out
-        attn_scores = self.attention_pooling(lstm_out)  # [B, T, 1]
-        attn_weights = torch.softmax(attn_scores, dim=1)  # [B, T, 1]
-        pooled = (lstm_out * attn_weights).sum(dim=1)  # [B, hidden_dim]
+        # attn_scores = self.attention_pooling(lstm_out)  # [B, T, 1]
+        # attn_weights = torch.softmax(attn_scores, dim=1)  # [B, T, 1]
+        # pooled = (lstm_out * attn_weights).sum(dim=1)  # [B, hidden_dim]
+        pooled = lstm_out.mean(dim=1)
 
         pooled = self.dropout(pooled)
 

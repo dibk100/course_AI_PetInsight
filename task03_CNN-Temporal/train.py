@@ -9,9 +9,10 @@ from dataset import *
 from model import *
 from eval import *
 
+import torch
+torch.cuda.empty_cache()
 
 def train_model(config):
-    torch.cuda.empty_cache()
     set_seed(config['seed'])
     device = config['device']
     
