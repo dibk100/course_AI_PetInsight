@@ -63,19 +63,32 @@ class MultiLabelVideoTransformerClassifier(nn.Module):
         self.dropout = nn.Dropout(0.2)
         self.norm = nn.LayerNorm(self.feature_dim)
         
-        self.attention_pooling = nn.Sequential(
-            nn.Linear(self.feature_dim, 128),
-            nn.Tanh(),
-            nn.Linear(128, 1),
-        )
+        # self.attention_pooling = nn.Sequential(
+        #     nn.Linear(self.feature_dim, 128),
+        #     nn.Tanh(),
+        #     nn.Linear(128, 1),
+        # )
         
     def forward(self, x):  # x: [B, T, C, H, W]
         B, T, C, H, W = x.size()
-        x = x.view(B * T, C, H, W)
-        feats = self.shared_encoder(x)  # [B*T, feature_dim]
-        feats = feats.view(B, T, -1)    # [B, T, feature_dim]
 
+        # 기존 방식은 OOM 발생.  
+        # x = x.view(B * T, C, H, W)
+        # feats = self.shared_encoder(x)  # [B*T, feature_dim]
+        # feats = feats.view(B, T, -1)    # [B, T, feature_dim]
+        
+        # 느리지만 안전한 CNN추출방식        
+        feats = []
+        for t in range(T):
+            frame = x[:, t]  # [B, C, H, W]
+            feat = self.shared_encoder(frame)  # [B, D]
+            feats.append(feat)
+        feats = torch.stack(feats, dim=1)  # [B, T, feature_dim]
+
+        # Positional Encoding
         feats = self.pos_encoding(feats)      # positional encoding 추가
+        
+        # Transformer 인코딩
         encoded = self.transformer(feats)     # [B, T, feature_dim]
         # encoded = self.norm(encoded)        # 정규화 : transforemer 내부에 norm이 적용되고 있ㅇㄹ 수 있음
         
@@ -84,6 +97,7 @@ class MultiLabelVideoTransformerClassifier(nn.Module):
         # attn_weights = torch.softmax(attn_scores, dim=1)     # [B, T, 1]
         # pooled = (encoded * attn_weights).sum(dim=1)         # [B, D]
         
+        # Attention pooling 대신 평균 pooling 사용
         pooled = encoded.mean(dim=1)           # [B, feature_dim] (평균 pooling) -> 모든 프레임의 feature를 동등하게 평균함. 중요 프레임 구분을 못함.
         pooled = self.dropout(pooled)        # dropout 적용 :: 위치 고민
 
@@ -119,12 +133,12 @@ class MultiLabelVideoLSTMClassifier(nn.Module):
 
         self.dropout = nn.Dropout(dropout)
 
-        # Attention pooling (optional)
-        self.attention_pooling = nn.Sequential(
-            nn.Linear(lstm_hidden_dim, 128),
-            nn.Tanh(),
-            nn.Linear(128, 1),
-        )
+        # # Attention pooling (optional)
+        # self.attention_pooling = nn.Sequential(
+        #     nn.Linear(lstm_hidden_dim, 128),
+        #     nn.Tanh(),
+        #     nn.Linear(128, 1),
+        # )
 
         # Task heads
         self.action_head = nn.Sequential(
@@ -145,14 +159,23 @@ class MultiLabelVideoLSTMClassifier(nn.Module):
 
     def forward(self, x):  # x: [B, T, C, H, W]
         B, T, C, H, W = x.size()
-        x = x.view(B * T, C, H, W)
-        feats = self.shared_encoder(x)  # [B*T, feature_dim]
-        feats = feats.view(B, T, -1)    # [B, T, feature_dim]
+        
+        # 기존 방식은 OOM 발생.        
+        # x = x.view(B * T, C, H, W)
+        # feats = self.shared_encoder(x)  # [B*T, feature_dim]
+        # feats = feats.view(B, T, -1)    # [B, T, feature_dim]
+        
+        feats = []
+        for t in range(T):
+            frame = x[:, t]  # [B, C, H, W]
+            feat = self.shared_encoder(frame)  # [B, feature_dim]
+            feats.append(feat)
+        feats = torch.stack(feats, dim=1)  # [B, T, feature_dim]
 
         # LSTM
         lstm_out, (h_n, c_n) = self.lstm(feats)  # lstm_out: [B, T, hidden_dim]
 
-        # Attention pooling on lstm_out
+        # Attention pooling on lstm_out : attention은 무거워서 일단 패스
         # attn_scores = self.attention_pooling(lstm_out)  # [B, T, 1]
         # attn_weights = torch.softmax(attn_scores, dim=1)  # [B, T, 1]
         # pooled = (lstm_out * attn_weights).sum(dim=1)  # [B, hidden_dim]

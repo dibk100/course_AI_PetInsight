@@ -62,10 +62,10 @@ class CatVideoDataset(Dataset):
 
                 if self.transform:
                     image_tensor = self.transform(image)
-                    # if i == 0 and idx % 500 == 0:
-                    #     print(f"[Debug] Transformed Tensor - shape: {image_tensor.shape}, "
-                    #         f"min: {image_tensor.min().item():.4f}, max: {image_tensor.max().item():.4f}, "
-                    #         f"mean: {image_tensor.mean().item():.4f}")
+                    if i == 0 and idx % 500 == 0:
+                        print(f"[Debug] Transformed Tensor - shape: {image_tensor.shape}, "
+                            f"min: {image_tensor.min().item():.4f}, max: {image_tensor.max().item():.4f}, "
+                            f"mean: {image_tensor.mean().item():.4f}")
                 else:
                     image_tensor = transforms.ToTensor()(image)
 
@@ -98,7 +98,7 @@ class CatVideoDataset(Dataset):
 def get_dataset(config: dict, split: str = 'train') -> Dataset:
     csv_path = config['data'][f'{split}_csv']
     root_dir = config['data'].get('root_dir', './frames')
-    max_frames = config.get('max_frames', 100)
+    max_frames = config.get('max_frames', 150)
 
     label_maps = get_label_maps_from_config(config)
 

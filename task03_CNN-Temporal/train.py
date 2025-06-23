@@ -86,10 +86,10 @@ def train_model(config):
                 #         print(f"[Grad Check] {name} grad norm: {param.grad.norm().item()}")
                 #     if "conv1" in name:
                 #         print(f"[Check] {name} requires_grad: {param.requires_grad}")
-            # if batch_idx == 0:
-            #     print(f"[conv1 output] shape: {conv1_outputs[0].shape}")
-            #     print(f"[conv1 output] mean: {conv1_outputs[0].mean().item():.4f}, std: {conv1_outputs[0].std().item():.4f}, max: {conv1_outputs[0].max().item():.4f}")
-            #     conv1_outputs.clear()  # 다음 배치 출력을 위해 비워줌
+            if batch_idx == 0:
+                print(f"[conv1 output] shape: {conv1_outputs[0].shape}")
+                print(f"[conv1 output] mean: {conv1_outputs[0].mean().item():.4f}, std: {conv1_outputs[0].std().item():.4f}, max: {conv1_outputs[0].max().item():.4f}")
+                conv1_outputs.clear()  # 다음 배치 출력을 위해 비워줌
             
             optimizer.step()
             lr_scheduler.step()
