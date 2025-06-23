@@ -8,11 +8,10 @@ CNN-Temporal based multi-task video classification model
 ```
 CAT_image_2nd/
 ├── 20201028_cat-arch-000156.mp4/
-│   ├── frame_0_timestamp_0.jpg
+│   ├── f20201028_cat-arch-000156.mp4.json     # 해당 영상 메타데이터 (프레임별 timestamp, keypoints, bbox 등)
 │   ├── frame_12_timestamp_800.jpg
 │   └── ... (프레임 이미지들)
-├── 20201028_cat-arch-000156.mp4.json    # 해당 영상 메타데이터 (프레임별 timestamp, keypoints, bbox 등)
-├── cat-armstretch-080706/
+├── cat-armstretch-080706/    
 │   ├── cat-armstretch-080706.json
 │   ├── frame_0.jpg
 │   ├── frame_1.jpg
