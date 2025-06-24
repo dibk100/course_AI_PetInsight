@@ -10,7 +10,7 @@ import torch.multiprocessing as mp
 def main():
     load_dotenv(verbose=True)               # .env심기, wandb로그인 key
     parser = argparse.ArgumentParser(description="CNN+Transformer multi-head classification")
-    parser.add_argument('--mode', choices=['train', 'eval'], required=True)
+    parser.add_argument('--mode', choices=['train', 'eval','profile'], required=True)
     parser.add_argument('--config', type=str, required=True, help='Path to config YAML')
     args = parser.parse_args()
 
@@ -29,6 +29,9 @@ def main():
         
         train_model(config)
         wandb.finish()
+    
+    elif args.mode == 'profile':
+        profile_one_batch(config)
         
     elif args.mode == 'eval':
         evaluate_model(config, split='test')

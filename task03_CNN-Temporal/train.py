@@ -34,7 +34,8 @@ def train_model(config):
         num_emotions=len(config['label_names']['emotion']),
         num_situations=len(config['label_names']['situation']),
         backbone_name=config.get('backbone_name', 'resnet18'),
-        pretrained=config.get('pretrained', True)
+        pretrained=config.get('pretrained', True),
+        debug=True
     )
     model = model_wrapper.get_model()
     model.to(device)
@@ -67,7 +68,7 @@ def train_model(config):
             y_action = y_action.to(device)
             y_emotion = y_emotion.to(device)
             y_situation = y_situation.to(device)
-            outputs_action, outputs_emotion, outputs_situation = model(frames)
+            outputs_action, outputs_emotion, outputs_situation = model(frames,epoch=epoch, batch_idx=batch_idx)
             
             loss_a = criterion_action(outputs_action, y_action)
             loss_e = criterion_emotion(outputs_emotion, y_emotion)
@@ -86,7 +87,7 @@ def train_model(config):
                 #         print(f"[Grad Check] {name} grad norm: {param.grad.norm().item()}")
                 #     if "conv1" in name:
                 #         print(f"[Check] {name} requires_grad: {param.requires_grad}")
-            if batch_idx == 0:
+            if batch_idx%100==0:
                 print(f"[conv1 output] shape: {conv1_outputs[0].shape}")
                 print(f"[conv1 output] mean: {conv1_outputs[0].mean().item():.4f}, std: {conv1_outputs[0].std().item():.4f}, max: {conv1_outputs[0].max().item():.4f}")
                 conv1_outputs.clear()  # 다음 배치 출력을 위해 비워줌
@@ -99,6 +100,7 @@ def train_model(config):
         avg_train_loss = total_loss / len(train_loader)
         print(f"\nEpoch {epoch} | Train Loss: {avg_train_loss:.4f}")
 
+        print("----logging : 검증 평가 전----")
         # 검증 평가
         val_loss, macro_f1, micro_f1, partial_score, exact_match_acc, label_wise_acc = evaluate_model_val(model, val_loader, config['device'])
         print(
@@ -110,6 +112,7 @@ def train_model(config):
             f"Exact Match Acc: {exact_match_acc:.4f} | "
             f"Label-wise Acc: {label_wise_acc}"
         )
+        print("----logging : wandb----")
         wandb.log({
             'epoch': epoch,
             'train_loss': avg_train_loss,
@@ -134,3 +137,57 @@ def train_model(config):
                 val_loss=val_loss,
                 score=best_score,
             )
+
+import torch
+from torch.profiler import profile, record_function, ProfilerActivity
+
+def profile_one_batch(config):
+    set_seed(config['seed'])
+    device = config['device']
+
+    # 데이터셋 & DataLoader
+    train_dataset = get_dataset(config, split='train')
+    train_loader = DataLoader(train_dataset, batch_size=config['batch_size'], shuffle=True,
+                              num_workers=4, collate_fn=collate_fn, pin_memory=True)
+
+    # 모델 초기화
+    model_class = MODEL_CLASSES.get(config['model_name'].lower(), MultiLabelVideoTransformerClassifier)
+    model_wrapper = model_class(
+        num_actions=len(config['label_names']['action']),
+        num_emotions=len(config['label_names']['emotion']),
+        num_situations=len(config['label_names']['situation']),
+        backbone_name=config.get('backbone_name', 'resnet18'),
+        pretrained=config.get('pretrained', True),
+        debug=True
+    )
+    model = model_wrapper.get_model()
+    model.to(device)
+    model.train()
+
+    optimizer = AdamW(model.parameters(), lr=float(config['learning_rate']))
+    criterion_action = nn.CrossEntropyLoss()
+    criterion_emotion = nn.CrossEntropyLoss()
+    criterion_situation = nn.CrossEntropyLoss()
+
+    # 한 배치만 프로파일링
+    for batch_idx, (frames, y_action, y_emotion, y_situation) in enumerate(train_loader):
+        with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], record_shapes=True) as prof:
+            with record_function("batch_train"):
+                optimizer.zero_grad()
+                frames = frames.to(device)
+                y_action = y_action.to(device)
+                y_emotion = y_emotion.to(device)
+                y_situation = y_situation.to(device)
+
+                outputs_action, outputs_emotion, outputs_situation = model(frames, epoch=0, batch_idx=batch_idx)
+
+                loss_a = criterion_action(outputs_action, y_action)
+                loss_e = criterion_emotion(outputs_emotion, y_emotion)
+                loss_s = criterion_situation(outputs_situation, y_situation)
+                loss = loss_a + loss_e + loss_s
+
+                loss.backward()
+                optimizer.step()
+
+        print(prof.key_averages().table(sort_by="cuda_time_total", row_limit=15))
+        break  # 한 배치만 프로파일링 후 종료

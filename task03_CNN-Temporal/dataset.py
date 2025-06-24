@@ -77,7 +77,7 @@ class CatVideoDataset(Dataset):
 
         # 패딩 처리
         if len(frames) < self.max_frames:
-            pad_frame = torch.zeros_like(frames[0]) if frames else torch.zeros(3, 224, 224)
+            pad_frame = torch.zeros_like(frames[0]) if frames else torch.zeros(3, 64, 64)
             while len(frames) < self.max_frames:
                 frames.append(pad_frame)
 
@@ -97,14 +97,14 @@ class CatVideoDataset(Dataset):
 
 def get_dataset(config: dict, split: str = 'train') -> Dataset:
     csv_path = config['data'][f'{split}_csv']
-    root_dir = config['data'].get('root_dir', './frames')
+    root_dir = config['data'].get('root_dir', './data')
     max_frames = config.get('max_frames', 150)
 
     label_maps = get_label_maps_from_config(config)
 
     if split == 'train':
         transform = transforms.Compose([
-            transforms.Resize((224, 224)),
+            transforms.Resize((64, 64)),
             transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -112,7 +112,7 @@ def get_dataset(config: dict, split: str = 'train') -> Dataset:
         ])
     else:
         transform = transforms.Compose([
-            transforms.Resize((224, 224)),
+            transforms.Resize((64, 64)),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                  std=[0.229, 0.224, 0.225]),

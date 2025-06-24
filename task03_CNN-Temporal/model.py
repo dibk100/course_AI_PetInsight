@@ -19,8 +19,9 @@ class PositionalEncoding(nn.Module):
 class MultiLabelVideoTransformerClassifier(nn.Module):
     def __init__(self, num_actions, num_emotions, num_situations,
                  backbone_name='resnet18', pretrained=True,
-                 trans_layers=4, trans_heads=8, trans_dim=512):
+                 trans_layers=4, trans_heads=8, trans_dim=512,debug=False):
         super().__init__()
+        self.debug = debug   # debug 속성 선언
         
         # 1. CNN 백본
         self.shared_encoder = timm.create_model(backbone_name, pretrained=pretrained, num_classes=0)
@@ -69,7 +70,7 @@ class MultiLabelVideoTransformerClassifier(nn.Module):
         #     nn.Linear(128, 1),
         # )
         
-    def forward(self, x):  # x: [B, T, C, H, W]
+    def forward(self, x,epoch=None, batch_idx=None):  # x: [B, T, C, H, W]
         B, T, C, H, W = x.size()
 
         # 기존 방식은 OOM 발생.  
@@ -82,8 +83,12 @@ class MultiLabelVideoTransformerClassifier(nn.Module):
         for t in range(T):
             frame = x[:, t]  # [B, C, H, W]
             feat = self.shared_encoder(frame)  # [B, D]
-            feats.append(feat)
+            # feats.append(feat)
+            feats.append(feat.detach())  # detach 추가
         feats = torch.stack(feats, dim=1)  # [B, T, feature_dim]
+        
+        if hasattr(self, 'debug') and self.debug and epoch == 0 and batch_idx == 0:
+            print(f"step01 : [feats] shape: {feats.shape}, mean: {feats.mean().item():.4f}, std: {feats.std().item():.4f}")
 
         # Positional Encoding
         feats = self.pos_encoding(feats)      # positional encoding 추가
@@ -117,8 +122,9 @@ class MultiLabelVideoTransformerClassifier(nn.Module):
 class MultiLabelVideoLSTMClassifier(nn.Module):
     def __init__(self, num_actions, num_emotions, num_situations,
                  backbone_name='resnet18', pretrained=True,
-                 lstm_hidden_dim=512, lstm_layers=1, dropout=0.2):
+                 lstm_hidden_dim=512, lstm_layers=1, dropout=0.2,debug=False):
         super().__init__()
+        self.debug = debug   # debug 속성 선언
 
         # CNN backbone
         self.shared_encoder = timm.create_model(backbone_name, pretrained=pretrained, num_classes=0)
@@ -140,46 +146,52 @@ class MultiLabelVideoLSTMClassifier(nn.Module):
         #     nn.Linear(128, 1),
         # )
 
+        self.action_head = nn.Linear(self.feature_dim, num_actions)
+        self.emotion_head = nn.Linear(self.feature_dim, num_emotions)
+        self.situation_head = nn.Linear(self.feature_dim, num_situations)
         # Task heads
-        self.action_head = nn.Sequential(
-            nn.Linear(lstm_hidden_dim, lstm_hidden_dim // 2),
-            nn.ReLU(),
-            nn.Linear(lstm_hidden_dim // 2, num_actions)
-        )
-        self.emotion_head = nn.Sequential(
-            nn.Linear(lstm_hidden_dim, lstm_hidden_dim // 2),
-            nn.ReLU(),
-            nn.Linear(lstm_hidden_dim // 2, num_emotions)
-        )
-        self.situation_head = nn.Sequential(
-            nn.Linear(lstm_hidden_dim, lstm_hidden_dim // 2),
-            nn.ReLU(),
-            nn.Linear(lstm_hidden_dim // 2, num_situations)
-        )
+        # self.action_head = nn.Sequential(
+        #     nn.Linear(lstm_hidden_dim, lstm_hidden_dim // 2),
+        #     nn.ReLU(),
+        #     nn.Linear(lstm_hidden_dim // 2, num_actions)
+        # )
+        # self.emotion_head = nn.Sequential(
+        #     nn.Linear(lstm_hidden_dim, lstm_hidden_dim // 2), 
+        #     nn.ReLU(),
+        #     nn.Linear(lstm_hidden_dim // 2, num_emotions)
+        # )
+        # self.situation_head = nn.Sequential(
+        #     nn.Linear(lstm_hidden_dim, lstm_hidden_dim // 2),
+        #     nn.ReLU(),
+        #     nn.Linear(lstm_hidden_dim // 2, num_situations)
+        # )
 
-    def forward(self, x):  # x: [B, T, C, H, W]
+    def forward(self, x,epoch=None, batch_idx=None):  # x: [B, T, C, H, W]
         B, T, C, H, W = x.size()
         
-        # 기존 방식은 OOM 발생.        
-        # x = x.view(B * T, C, H, W)
-        # feats = self.shared_encoder(x)  # [B*T, feature_dim]
-        # feats = feats.view(B, T, -1)    # [B, T, feature_dim]
-        
-        feats = []
+        device = x.device
+        h = torch.zeros(self.lstm.num_layers, B, self.lstm.hidden_size).to(device)
+        c = torch.zeros(self.lstm.num_layers, B, self.lstm.hidden_size).to(device)
+            
+        lstm_outs = []
         for t in range(T):
             frame = x[:, t]  # [B, C, H, W]
             feat = self.shared_encoder(frame)  # [B, feature_dim]
-            feats.append(feat)
-        feats = torch.stack(feats, dim=1)  # [B, T, feature_dim]
+            
+            feat = feat.unsqueeze(1)  # [B, 1, feature_dim] - because LSTM expects sequence
+            out, (h, c) = self.lstm(feat, (h, c))          # Step-by-step feeding
+            
+            lstm_outs.append(out)                          # [B, 1, hidden_dim]
+            
+        lstm_out = torch.cat(lstm_outs, dim=1)  # [B, T, hidden_dim]
+        
+        if self.debug and epoch is not None and batch_idx is not None and epoch % 500 == 0 and batch_idx % 500 == 0:
+            print(f"step01 : [lstm_out] shape: {lstm_out.shape}, mean: {lstm_out.mean().item():.4f}, std: {lstm_out.std().item():.4f}")
 
-        # LSTM
-        lstm_out, (h_n, c_n) = self.lstm(feats)  # lstm_out: [B, T, hidden_dim]
-
-        # Attention pooling on lstm_out : attention은 무거워서 일단 패스
-        # attn_scores = self.attention_pooling(lstm_out)  # [B, T, 1]
-        # attn_weights = torch.softmax(attn_scores, dim=1)  # [B, T, 1]
-        # pooled = (lstm_out * attn_weights).sum(dim=1)  # [B, hidden_dim]
-        pooled = lstm_out.mean(dim=1)
+        pooled = lstm_out.mean(dim=1)  # [B, hidden_dim]
+        
+        if self.debug and epoch is not None and batch_idx is not None and epoch % 500 == 0 and batch_idx % 500 == 0:
+            print(f"step02 : [pooled] shape: {pooled.shape}, mean: {pooled.mean().item():.4f}, std: {pooled.std().item():.4f}")
 
         pooled = self.dropout(pooled)
 
