@@ -4,7 +4,70 @@ CNN-Temporal based multi-task video classification model
 - CNN + LSTM   
 - CNN + Transformer
 
-### 📁 Data Structure
+## 🧩 Model Architecture Overview
+### 1️⃣ MultiLabelVideoLSTMClassifier
+```
+Input Video Frames: [B, T, C, H, W]
+       │
+       ▼
+CNN Backbone (e.g., ResNet18)
+[각 프레임별 특징 추출 → B, T, D]
+       │
+       ▼
+Step-wise LSTM 입력
+- 방식: 프레임별로 CNN 추출 후 순차적으로 LSTM에 입력
+- Hidden Dim: H
+- Num Layers: L
+       │
+       ▼
+LSTM Output Sequence: [B, T, H]
+       │
+       ▼
+Mean Pooling (Across Time Axis)
+       │
+       ▼
+Dropout (optional)
+       │
+       ├──────────────┬──────────────┐
+       ▼              ▼              ▼              
+ Action Head     Emotion Head   Situation Head  (3-way Classifier)
+ (Linear)        (Linear)       (Linear)
+
+```
+
+### 2️⃣ MultiLabelVideoTransformerClassifier -> 수정필요
+```
+Input Video Frames: [B, T, C, H, W]
+       │
+       ▼
+CNN Backbone (e.g., ResNet18)
+[각 프레임별 특징 추출 → B, T, D]
+       │
+       ▼
+Positional Encoding (Temporal Order 반영)
+       │
+       ▼
+Transformer Encoder
+- Layers: N
+- Heads: H
+- Hidden Dim: D
+       │
+       ▼
+Temporal Feature Sequence: [B, T, D]
+       │
+       ▼
+Mean Pooling (Across Time Axis)
+       │
+       ▼
+Dropout & LayerNorm (optional)
+       │
+       ├──────────────┬──────────────┬──────────────┐
+       ▼              ▼              ▼              ▼
+ Action Head     Emotion Head   Situation Head  (3-way Classifier)
+ (MLP)           (MLP)          (MLP)
+```
+
+## 📁 Data Structure
 ```
 CAT_image_2nd/
 ├── 20201028_cat-arch-000156.mp4/
@@ -17,9 +80,9 @@ CAT_image_2nd/
 │   ├── frame_1.jpg
 │   └── ... (프레임 이미지들)
 └── ~    
-
 ```
-### 📁 dataset.py
+
+## 📁 dataset.py
 ```
 CatVideoDataset
  ├─ __getitem__ : (T, C, H, W) 텐서 반환
