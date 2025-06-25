@@ -1,4 +1,5 @@
-# project_AI_PetBabel 🐾🐾
+# project_AI_PetInsight 🐾🐾
+> 본 레포는 고양이 행동과 감정 이해를 위한 CNN 기반 다중 태스크 AI 모델 연구(1세대)이며, 최신 연구는 별도 레포(PetBabel)에서 진행 중   
 - Course : 2025년 1학기 인공지능(AI) 프로젝트  
 - Subject :A Multi-task AI Model for Understanding Cat Behavior and Emotion(고양이 행동과 감정 이해를 위한 다중 태스크 AI 모델 개발 )
 
